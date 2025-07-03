@@ -9,7 +9,7 @@ use rss::{
 use serde::Deserialize;
 use tracing::{error, info};
 
-use crate::models::{Channel, Episode};
+use shared::models::{Channel, Episode};
 
 use super::AppState;
 

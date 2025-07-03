@@ -61,7 +61,7 @@ fn get_metadata(html: &str, metadata: &str) -> String{
     re.captures(html)
         .map(|c| c["content"].to_string())
         .unwrap_or("".to_string())
-        
+
 }
 
 

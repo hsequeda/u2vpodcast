@@ -18,15 +18,13 @@ use tracing::{
     error,
 };
 
-use crate::models::CResponse;
-
-use super::{
-    AppState,
-    super::models::{
+use shared::models::{
+CResponse,
         User,
         NewUser,
-    },
 };
+
+use super::{ AppState, };
 
 #[allow(unused)]
 pub fn api_users(cfg: &mut ServiceConfig){

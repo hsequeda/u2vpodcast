@@ -11,7 +11,7 @@ mod feed;
 use actix_web::web;
 use tracing::info;
 
-use super::models::{
+use shared::models::{
     Credentials,
     AppState,
 };

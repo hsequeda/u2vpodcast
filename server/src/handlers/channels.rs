@@ -19,15 +19,14 @@ use tracing::{
     error,
 };
 
-use super::{
-    AppState,
-    super::models::{
-        CResponse,
-        Channel,
-        NewChannel,
-        UpdateChannel,
-    },
+use shared::models::{
+  CResponse,
+  Channel,
+  NewChannel,
+  UpdateChannel,
 };
+
+use super::{AppState};
 
 static FOLDER: &str = "/app/audios";
 

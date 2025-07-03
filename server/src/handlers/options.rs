@@ -15,16 +15,14 @@ use tracing::{
     error,
 };
 
-use super::{
-    AppState,
-    super::{
-        utils::worker::do_the_work,
-        models::{
+use shared::models::{
             CResponse,
             Param,
-        },
-    },
 };
+
+use shared:: utils::worker::do_the_work;
+
+use super::{ AppState};
 
 #[derive(Serialize, Deserialize)]
 struct KeyValue{
@@ -56,7 +54,7 @@ async fn post_options(
         match Param::set(&data.pool, &pair.key, &pair.value).await {
             Ok(kv) => {
                 debug!("{:?}", kv);
-                let key = kv.get_key(); 
+                let key = kv.get_key();
                 let value = kv.get_value();
                 response_pairs.push(KeyValue{
                     key: key.to_string(),

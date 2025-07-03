@@ -4,9 +4,9 @@ use actix_web::{
 };
 use actix_session::Session;
 use tracing::{info, error};
-use crate::models::CResponse;
+use shared::models::CResponse;
 
-use super::super::utils::USER_ID_KEY;
+use shared::utils::USER_ID_KEY;
 
 pub async fn get_logout(session: Session) -> impl Responder{
     info!("get_logout");

@@ -9,20 +9,20 @@ use actix_web::{
 use actix_session::Session;
 use tracing::{info, error};
 
-use crate::models::CResponse;
-
-use super::{
-    Credentials,
-    AppState,
-    super::{
-        models::User,
-        utils::{
+use shared::models::{
+  CResponse,
+  User,
+};
+use shared::utils:: {
             USER_ID_KEY,
             USER_NAME_KEY,
             USER_ROLE_KEY,
             USER_ACTIVE_KEY,
-        }
-    }
+};
+
+use super::{
+    Credentials,
+    AppState,
 };
 
 pub async fn get_session(

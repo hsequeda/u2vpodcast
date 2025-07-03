@@ -1,0 +1,19 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-cors = "0.7.0"
+actix-files = "0.6.5"
+serde = { version = "1.0.199", features = ["derive"] }
+actix-session = { version = "0.9.0", features = ["cookie-session"] }
+actix-web = "4.5.1"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "std", "time"] }
+shared = {path = "../shared"}
+rss = "2.0.7"
+tokio = { version = "1.37.0", features = ["full", "tracing"] }
+time = { version = "0.3.36", features = ["local-offset"] }
+sqlx = { version = "0.7.4", features = ["sqlite", "macros", "chrono", "runtime-tokio"] }
+chrono = { version = "0.4.38", features = ["serde"] }

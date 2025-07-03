@@ -1,7 +1,7 @@
 use actix_session::Session;
 use serde::Serialize;
 use actix_web::Responder;
-use crate::models::CResponse;
+use shared::models::CResponse;
 
 
 #[derive(Serialize)]

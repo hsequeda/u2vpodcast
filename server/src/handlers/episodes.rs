@@ -14,12 +14,13 @@ use tracing::{
     debug,
 };
 
-use super::{
-    AppState,
-    super::models::{
+use shared::models::{
         Episode,
         CResponse,
-    },
+};
+
+use super::{
+    AppState,
 };
 
 #[derive(Deserialize)]

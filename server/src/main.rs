@@ -1,46 +1,26 @@
-mod models;
-mod utils;
 mod handlers;
 
 use sqlx::{
-    sqlite::SqlitePoolOptions,
     migrate::{
-        Migrator,
-        MigrateDatabase
-    }
+        MigrateDatabase, Migrator
+    }, sqlite::SqlitePoolOptions, SqlitePool,
 };
 
-use tokio::{
-    spawn,
-    time::{
-        sleep,
-        Duration,
-    },
-};
 use std::{
     str::FromStr,
     env::var,
     path::Path,
 };
+
 use tracing_subscriber::{
     Layer,
     EnvFilter,
     layer::SubscriberExt,
     util::SubscriberInitExt
 };
-use tracing::{
-    info,
-    error,
-};
 
-use models::{
-    Error,
-    Config,
-    AppState,
-    User,
-    Ytdlp,
-};
-use utils::worker::do_the_work;
+use tracing::info;
+
 use actix_files as af;
 use actix_session::{
     SessionMiddleware,
@@ -57,16 +37,23 @@ use actix_web::{
         SameSite,
     },
 };
+
 use actix_cors::Cors;
+
+use shared::models::{
+    Error,
+    Config,
+    AppState,
+    User
+};
 
 
 static DDBB: &str = "u2vpodcast.db";
 static MIGRATIONS_DIR: &str = "migrations";
 
 #[actix_web::main]
-async fn main() -> Result<(), Error> {
-
-    let format = time::format_description::parse(
+async fn main() -> Result<(), Error>{
+let format = time::format_description::parse(
         "[year]-[month padding:zero]-[day padding:zero]T[hour]:[minute]:[second]",
     ).expect("Can't parse timer");
     let offset_in_sec = chrono::Local::now()
@@ -90,83 +77,10 @@ async fn main() -> Result<(), Error> {
     info!("Log level: {log_level}");
 
     let config = Config::load().await;
+  let pool = init_db(config.clone()).await.expect("init db");
 
-    let db_url = if var("RUST_ENV") == Ok("production".to_string()){
-        std::env::current_exe()?
-            .parent()
-            .unwrap()
-            .join("db")
-            .join(DDBB)
-            .to_str()
-            .unwrap()
-            .to_string()
-    }else{
-        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        Path::new(&crate_dir)
-            .join(DDBB)
-            .to_str()
-            .unwrap()
-            .to_string()
-    };
-    info!("DB url: {db_url}");
-    let db_exists = sqlx::Sqlite::database_exists(&db_url).await.unwrap();
-    info!("DB exists: {db_exists}");
-    if !db_exists{
-        sqlx::Sqlite::create_database(&db_url).await.unwrap();
-    }
-
-    let migrations = if var("RUST_ENV") == Ok("production".to_string()){
-        std::env::current_exe().unwrap().parent().unwrap().join(MIGRATIONS_DIR)
-    }else{
-        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        Path::new(&crate_dir).join(MIGRATIONS_DIR)
-    };
-    info!("{}", &migrations.display());
-
-    let pool = SqlitePoolOptions::new()
-        .max_connections(2)
-        .connect(&db_url)
-        .await
-        .expect("Pool failed");
-
-    Migrator::new(migrations)
-        .await?
-        .run(&pool)
-        .await?;
-
-    let sleep_time = config.sleep_time;
     let url = config.url.clone();
     let port = config.port;
-
-    if !db_exists {
-        User::default(&pool, &config.admin_username, &config.admin_password)
-            .await
-            .expect("Cant create admin user");
-    }
-
-
-    let pool2 = pool.clone();
-    spawn(async move{
-        //let auth = HttpAuthentication::bearer(validator);
-        loop {
-            info!("**** Start updating yt-dlp ****");
-            match Ytdlp::auto_update().await{
-                Ok(()) => {},
-                Err(e) => error!("{}", e),
-            }
-            info!("**** Finish updating yt-dlp ****");
-            match do_the_work(&pool2).await{
-                Ok(_) => {},
-                Err(e) => {
-                    error!("Error doing the work: {e}");
-                }
-            }
-            info!("Sleep time: {}", &sleep_time);
-            sleep(Duration::from_secs(sleep_time * 3600)).await;
-        }
-
-    });
-
 
     let config2 = config.clone();
     HttpServer::new(move || {
@@ -238,5 +152,57 @@ async fn main() -> Result<(), Error> {
     .run()
     .await
     .map_err(|e| e.into())
+}
 
+async fn init_db(config: Config) -> Result<SqlitePool, Error>{
+    let db_url = if var("RUST_ENV") == Ok("production".to_string()){
+        std::env::current_exe()?
+            .parent()
+            .unwrap()
+            .join("db")
+            .join(DDBB)
+            .to_str()
+            .unwrap()
+            .to_string()
+    }else{
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        Path::new(&crate_dir)
+            .join(DDBB)
+            .to_str()
+            .unwrap()
+            .to_string()
+    };
+    info!("DB url: {db_url}");
+    let db_exists = sqlx::Sqlite::database_exists(&db_url).await.unwrap();
+    info!("DB exists: {db_exists}");
+    if !db_exists{
+        sqlx::Sqlite::create_database(&db_url).await.unwrap();
+    }
+
+    let migrations = if var("RUST_ENV") == Ok("production".to_string()){
+        std::env::current_exe().unwrap().parent().unwrap().join(MIGRATIONS_DIR)
+    }else{
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        Path::new(&crate_dir).join(MIGRATIONS_DIR)
+    };
+    info!("{}", &migrations.display());
+
+    let pool = SqlitePoolOptions::new()
+        .max_connections(2)
+        .connect(&db_url)
+        .await
+        .expect("Pool failed");
+
+    Migrator::new(migrations)
+        .await?
+        .run(&pool)
+        .await?;
+
+    if !db_exists {
+        User::default(&pool, &config.admin_username, &config.admin_password)
+            .await
+            .expect("Cant create admin user");
+    }
+
+  Ok(pool)
 }
